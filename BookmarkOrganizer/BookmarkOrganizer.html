@@ -1,0 +1,230 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+	"http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+<meta http-equiv="Content-type" content="text/html; charset=utf-8" />
+<title>Firefox标签整理助手</title>
+<meta name="keywords" content="" />
+<meta name="description" content="" />
+<link rel="shortcut icon" href="style/img/favicon.ico" />
+<link rel="stylesheet" type="text/css" href="style/jqueryapi.css" />
+
+<script type="text/javascript" src="lib/json2.js"></script>
+<script type="text/javascript" src="lib/jquery/jquery.pack.js"></script>
+<script type="text/javascript" src="lib/jquery.ui/ui.core.packed.js"></script>
+<script type="text/javascript" src="lib/jquery.ui/ui.draggable.packed.js"></script>
+<script type="text/javascript" src="lib/jquery.ui/ui.sortable.packed.js"></script>
+<script type="text/javascript" src="lib/jquery.ui/ui.droppable.packed.js"></script>
+<script type="text/javascript" src="AIRAliases.js"></script>
+
+
+<script type="text/javascript" src="style/lib/jquery.dimensions.js"></script>
+<script type="text/javascript" src="style/lib/jquery.corner-min.js"></script>
+<script type="text/javascript" src="style/jqueryapi.js"></script>
+
+<script type="text/javascript">
+	var bookmark_all; //the json object representing all bookmarks
+	var bookmark_toolbar; // the bookmarks that we are interested in 
+	
+	// reads the content of a local text file
+	function readBookmarkFile(path){
+		
+	    var fs = new air.FileStream();
+	    fs.open(path, air.FileMode.READ);
+	
+	    var content = fs.readUTFBytes(fs.bytesAvailable);
+	    fs.close();
+	    
+	    return content;
+	}
+		
+	function doGenBookmarkMenu(json){
+		bookmark_all = json;
+		bookmark_toolbar = bookmark_all.children[1].children; //get the bookmark taskbar as an array
+		/*
+				The structure of the document:
+				(when elements with * are clicked, its following element(only one) will be shown.)
+				
+				mainmenu
+					menuitem *
+					functionmenu
+						non-category
+							functionitem *
+								content
+									h1
+									button
+									iframe
+						categoryitem *				
+						category
+							functionitem *
+							content
+								h1
+								button
+								iframe		
+		
+				
+				The structure of the JSON object "bookmark_all", attributs with * are used.
+				[
+					{
+						index:
+						title: *
+						id: *
+						parent:
+						dateAdded:
+						lastModified:
+						type: text/x-moz-place-container
+						children: *
+							[
+								{
+									title: *
+									id: *
+									parent:
+									dateAdded:
+									lastModified:							
+									type: text/x-moz-place
+									uri: *
+									annos:
+										{
+											name: bookmarkProperties/description
+											flags:
+											expires:
+											mimeTypes:
+											type: 3
+											value: 
+										}
+								}
+							]
+					}
+				]
+				
+				
+				we need to mark every element with two attribute:
+				
+				@index is the index of the json array. we will be able to access to the corresponding object in the json object.
+				@bookmark_id is the id of a bookmark, appointed by firefox, we will be able to do drag-and-drop to change the parent of a bookmark later by it
+				
+		*/
+		function getBookmarkContent(n)
+		{
+			var title = '<h1>' + n.title + '</h1>';
+			var browse_button = $('<input type="button" value="点击这里访问页面"/>').addClass("browse_button").attr("url", n.uri);
+			
+			var content = $('<div class="content"></div>');
+			
+			content.append(title).append(browse_button);
+			
+			return content;
+		}
+
+		$.each(bookmark_toolbar, function(i, n)
+		{			
+			var mainmenu = $('body > .mainmenu'); //bookmark main catagory			
+			
+			$('<div></div>').text(n.title).addClass("menuitem").attr({
+				index: i,
+				bookmark_id: n.id
+			}).appendTo(mainmenu);
+			
+			mainmenu.append('<div class="functionmenu"></div');
+			
+			$('body > .mainmenu > .functionmenu:last')
+			.append('<div class="non-category"></div>');
+			
+			if(n.children) $.each(n.children, function(i, n)
+			{
+				var length = 15;
+					
+				if (n.children) {
+					var cur_functionmenu = $('body > .mainmenu > .functionmenu:last'); //in current main catagory
+					
+					//bookmark sub catagory
+					$('<div></div>').addClass("categoryitem").text(n.title.substring(0, length)).attr({
+						index: i,
+						bookmark_id: n.id
+					}).appendTo(cur_functionmenu);
+					
+					cur_functionmenu.append('<div class="category"></div>');
+					
+					$.each(n.children, function(i, n){
+						
+						var cur_category = $('body > .mainmenu > .functionmenu > .category:last'); // in current sub catagory
+						
+						//bookmark item
+						$('<div></div>').addClass("functionitem").text(n.title.substring(0, length)).attr({
+							index: i,
+							bookmark_id: n.id
+						}).appendTo(cur_category);
+						
+						cur_category.append(getBookmarkContent(n));
+					});
+				}
+				else
+				{
+					var cur_non_category = $('body > .mainmenu > .functionmenu:last > .non-category');//in the non-catagory of the current main catagory
+					
+					//bookmark item
+					$('<div></div>').addClass("functionitem").text(n.title.substring(0, length)).attr({
+						index: i,
+						bookmark_id: n.id
+					}).appendTo(cur_non_category);
+					
+					cur_non_category.append(getBookmarkContent(n));	
+				}
+			});
+		});
+	}
+	
+	function genBookmarkMenu(path)
+	{
+				
+		var json_text = readBookmarkFile(path);	
+		
+		var json = JSON.parse(json_text);
+		
+		$('body > .mainmenu').empty();
+		
+		doGenBookmarkMenu(json);
+		
+		document_ready();
+	}
+
+	$(document).ready(function(){
+		
+		document_ready();
+		
+		var target = document.getElementById('target'); 
+		
+		target.addEventListener("dragenter", function(){
+			event.preventDefault(); 
+		}); 
+        target.addEventListener("dragover",  function(){
+			event.preventDefault(); 
+		}); 
+		
+		target.addEventListener("drop", function(event){
+			
+			var path = event.dataTransfer.getData("application/x-vnd.adobe.air.file-list")[0];
+			
+			genBookmarkMenu(path);
+			
+			$("#notice").empty();
+		});
+	});
+</script>
+
+</head>
+<body>
+<div id="header"></div>
+<hr style="color:#595959;" />
+<div id="foldandexpand">
+	<button id="fold">折叠</button>
+	<button id="expand">展开</button>
+	<button id="foldall">折叠全部</button>
+	<button id="expandall">展开全部</button>
+</div>
+<h1 id="notice">请将Firefox备份出来的json文件拖放到下面这块正方形区域中。放完后请稍候...</h1>
+<div class="mainmenu">
+<div id="target"></div>
+</div>
+</body>
+</html>
