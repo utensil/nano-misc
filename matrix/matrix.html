@@ -6,13 +6,18 @@
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
     <title>matrix</title>
     <meta name="author" content="">
-    <link rel="stylesheet" href="http://www.blueprintcss.org/blueprint/screen.css" _href="../stylesheets/blueprint/screen.css" type="text/css" media="all" />
-    <link rel="stylesheet" href="http://ajax.googleapis.com/ajax/libs/jqueryui/1.8.16/themes/redmond/jquery-ui.css" type="text/css" media="all"/>
-    <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.6.2/jquery.min.js" type="text/javascript"></script> 
-    <script src="http://ajax.googleapis.com/ajax/libs/jqueryui/1.8.16/jquery-ui.min.js" type="text/javascript"></script>
-    <script src="http://www.appelsiini.net/download/jquery.jeditable.mini.js" type="text/javascript"></script>
-<!--     <script type="application/javascript" src="../javascripts/jquery.min.js"></script>
-    <script type="application/javascript" src="../javascripts/jquery-ui.min.js"></script> -->
+    <!--  http://www.blueprintcss.org/blueprint/screen.css  -->
+    <link rel="stylesheet" href="styles/blueprint/screen.css" _href="../stylesheets/blueprint/screen.css" type="text/css" media="all" />
+    <!--  http://ajax.googleapis.com/ajax/libs/jqueryui/1.8.16/themes/redmond/jquery-ui.css  -->
+    <link rel="stylesheet" href="styles/jquery-ui-redmond.css" type="text/css" media="all"/>
+    <!--  http://ajax.googleapis.com/ajax/libs/jquery/1.6.2/jquery.min.js  -->
+    <script src="lib/jquery.min.js" type="text/javascript"></script> 
+    <!--  http://ajax.googleapis.com/ajax/libs/jqueryui/1.8.16/jquery-ui.min.js  -->
+    <script src="lib/jquery-ui.min.js" type="text/javascript"></script>
+    <!--  http://www.appelsiini.net/download/jquery.jeditable.mini.js  -->
+    <script src="lib/jquery.jeditable.mini.js" type="text/javascript"></script>
+    <!--  https://raw.github.com/dyoo/js-numbers/master/src/js-numbers.js  -->
+    <script src="lib/js-numbers.js" type="text/javascript"></script>
     <style type="text/css">
     
       #matrix, tr.ui-sortable-helper 
@@ -35,12 +40,31 @@
       input.text { margin-bottom:12px; width:95%; padding: .4em; }
     </style>
     <script type="application/javascript">
-      function mutiply_add_inner(from, k, to)
+    
+      // Let's open up plt.lib.Numbers to make it easy to use.
+      var N = jsnums;
+      for (val in N)
       {
-        return parseInt(from) * parseInt(k) + parseInt(to);
+          if (N.hasOwnProperty(val))
+          {
+            this[val] = N[val];
+          }
+      }
+    
+      function multiply_inner(from, k)
+      {
+        return multiply(fromString(from), fromString(k)).toString();
+        
+        //return parseInt(from) * parseInt(k)
+      }    
+    
+      function multiply_add_inner(from, k, to)
+      {
+        return add(multiply(fromString(from), fromString(k)), fromString(to)).toString();
+        //return parseInt(from) * parseInt(k) + parseInt(to);
       }   
     
-      function mutiply_add(from, k, to)
+      function multiply_add(from, k, to)
       {
         var from_array = [];
         
@@ -51,7 +75,7 @@
         
         to.find('td').each(function(index)
         {
-          var result = mutiply_add_inner(from_array[index], k, $(this).text());
+          var result = multiply_add_inner(from_array[index], k, $(this).text());
           
           $(this).text(result);
         });        
@@ -121,7 +145,7 @@
               
               var k = $('#dialog-form #transform-k').attr('value');
               
-              if(/^[0-9]+$/.test(k) || type_value == 'swap')
+              if(/^-?[0-9/]+$/.test(k) || type_value == 'swap')
               {
                 bValid = true;
               }
@@ -137,7 +161,7 @@
                 
                 if(type_value == 'multiply-add')
                 {               
-                  mutiply_add(from, k, to);
+                  multiply_add(from, k, to);
                   //$(to).effect("pulsate");                
                   $(from).effect("highlight", {speed: "slow"});
                   $(to).effect("highlight", {speed: "slow"});
@@ -146,7 +170,7 @@
                 {                  
                   to.find('td').each(function(index)
                   {
-                    var result = parseInt(k) * parseInt($(this).text());
+                    var result = multiply_inner($(this).text(), k);
                     
                     $(this).text(result);
                   }); 
@@ -178,7 +202,8 @@
                 .effect('bounce', {speed: 50});
               }
             },
-            Cancel: function() {
+            Cancel: function() 
+            {
               $('#dialog-form #transform-k').attr('value', '');
               $('#dialog-form #transform-k').removeClass('ui-state-error');                                 
               $( this ).dialog( "close" );
