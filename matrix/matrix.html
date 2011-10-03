@@ -6,8 +6,8 @@
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
     <title>matrix</title>
     <meta name="author" content="">
-    <!--  http://www.blueprintcss.org/blueprint/screen.css  -->
-    <link rel="stylesheet" href="styles/blueprint/screen.css" _href="../stylesheets/blueprint/screen.css" type="text/css" media="all" />
+    <!--  http://twitter.github.com/bootstrap/1.3.0/bootstrap.min.css -->
+    <link rel="stylesheet" href="styles/bootstrap.min.css">
     <!--  http://ajax.googleapis.com/ajax/libs/jqueryui/1.8.16/themes/redmond/jquery-ui.css  -->
     <link rel="stylesheet" href="styles/jquery-ui-redmond.css" type="text/css" media="all"/>
     <!--  http://ajax.googleapis.com/ajax/libs/jquery/1.6.2/jquery.min.js  -->
@@ -27,14 +27,21 @@
     
       #matrix
       {
-        width: 30em;     
+        width: 21em;
       }
       
+      .centered
+      {
+        margin-left: auto;
+        margin-right: auto; 
+      }
+       
       #matrix td
       {
+        vertical-align: middle;
         text-align: center;
-        width: 10em;
-        height: 10em;   
+        width: 7em;
+        height: 5em;   
       }      
       
       #matrix tbody tr:nth-child(even) td, #matrix tbody tr.even td 
@@ -43,29 +50,32 @@
       }
       
       input.text { margin-bottom:12px; width:95%; padding: .4em; }
+      
     </style>
+    
     <script type="application/javascript">
     
       // Let's open up plt.lib.Numbers to make it easy to use.
-      var N = jsnums;
-      for (val in N)
-      {
-          if (N.hasOwnProperty(val))
-          {
-            this[val] = N[val];
-          }
-      }
+      // var N = jsnums;
+      // for (val in N)
+      // {
+          // if (N.hasOwnProperty(val))
+          // {
+            // this[val] = N[val];
+          // }
+      // }
     
       function multiply_inner(from, k)
       {
-        return multiply(fromString(from), fromString(k)).toString();
-        
+        return jsnums.multiply(jsnums.fromString(from), jsnums.fromString(k)).toString();        
         //return parseInt(from) * parseInt(k)
       }    
     
       function multiply_add_inner(from, k, to)
       {
-        return add(multiply(fromString(from), fromString(k)), fromString(to)).toString();
+        return jsnums.add(
+            jsnums.fromString(multiply_inner(from, k)), 
+            jsnums.fromString(to)).toString();
         //return parseInt(from) * parseInt(k) + parseInt(to);
       }   
     
@@ -90,7 +100,7 @@
         
         $( "#create-dialog" ).dialog({
           autoOpen: false,
-          height: 350,
+          height: 370,
           width: 350,
           modal: true,
           open: function(event, ui)
@@ -146,7 +156,7 @@
                 
         $( "#tranform-dialog" ).dialog({
           autoOpen: false,
-          height: 300,
+          height: 350,
           width: 350,
           modal: true,
           open: function(event, ui)
@@ -285,7 +295,9 @@
             return value;
           },
           {
-            onblur : 'submit'
+            onblur : 'submit',
+            placeholder : '0',
+            tooltip : '点击修改...'
           });
           
           $(this_row).hover(function()
@@ -328,7 +340,7 @@
             
             var tr = $("<tr />");
             var td = $("<td />");
-            td.text("0");
+            td.text("");
             
             for(var i = 0; i < m; i++)
             {
@@ -347,8 +359,8 @@
               initRow(this);                    
             });
             
-            $('#matrix').css('width', 5 * m + 'em');
-            $('#matrix td').css({'text-align': 'center', 'width': '5em', 'height': '5em'});
+            $('#matrix').css({'width': 7 * m + 'em'});
+            $('#matrix td').css({'text-align': 'center', 'width': '7em', 'height': '5em'});
         }
         
         $(".matrix-rows tr").addClass("ui-widget-content");
@@ -370,36 +382,31 @@
     </script>
   </head>
   <body>
-  <div class="ui-widget">
-    <div class="ui-corner-all" id="intro"> 
-      <h2>使用说明</h2>
-      <p><span class="ui-icon ui-icon-info" style="float: left" ></span>
-        创建矩阵后：</p>
+  <div class="container">
+    <div class="ui-widget">
+      <div class="ui-corner-all well" id="intro"> 
+        <h2>使用说明</h2>
+        <p>创建矩阵后：</p>
         <ul>
           <li>单击任何一个元素可以修改其值</li>
           <li>双击一行可以将其乘以k</li>
           <li>将一行拖动到另外一行可以交换两行或乘以k相加</li>
         </ul>
-      
-    </div>
-  </div>    
-  <div class="span-14 prepend-1 append-11 last">
-    <button id="create-button" class="ui-button ui-widget ui-state-default ui-corner-all ui-button-text-only" role="button" aria-disabled="false">
-      <span class="ui-button-text">创建矩阵</span>
-    </button>
-  </div>    
-  <div class="span-14 prepend-1 append-11 last">
-    <table class="" id="matrix">
-<!--         <thead>
-          <tr>      
-            <th>Rendering engine</th>          
-          </tr>
-        </thead> -->
-    <tbody class="matrix-rows">
-      <tr>
-        <td>1</td>
-        <td>2</td>
-        <td>3</td>
+      <div class="">
+        <button id="create-button" class="ui-button ui-widget ui-state-default ui-corner-all ui-button-text-only" role="button" aria-disabled="false">
+          <span class="ui-button-text">创建矩阵</span>
+        </button>
+      </div> 
+      </div>  
+    </div> 
+    <div class="">
+      <table class="centered" id="matrix">
+        <!--         <thead><tr><th></th></tr></thead> -->
+        <tbody class="matrix-rows">
+          <tr>
+            <td>1</td>
+            <td>2</td>
+            <td>3</td>
       </tr>
       <tr>
         <td>4</td>
@@ -408,39 +415,39 @@
       </tr>
       <tr>
         <td>7</td>
-        <td>8</td>
-        <td>9</td>
-      </tr>
-    </tbody>
-  </table>
+            <td>8</td>
+            <td>9</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
   </div>
   <div>
-    <div id="create-dialog" title="创建矩阵">      
-      <div class="ui-widget">
-        <div class="ui-corner-all" > 
-          <p><span class="ui-icon ui-icon-info" style="float: left"></span>请选择希望创建的矩阵大小（n行m列，n<=10，m<=10），这将清空当前矩阵并创建一个新的：</p>
-        </div>
+    <div id="create-dialog" title="创建矩阵">
+      <form>   
+      <div class="ui-widget ui-corner-all well" > 
+        <p><span class="ui-icon ui-icon-info" style="float: left"></span>
+                        请选择希望创建的矩阵大小（n行m列）：</p>
       </div>
-      <form>
-      <fieldset>
+      <fieldset class='form-stacked'>
         <label for="matrix-n">n=</label>
-        <input type="text" name="matrix-n" id="matrix-n" 
-        class="text ui-widget-content ui-corner-all" />
+        <input type="text" name="matrix-n" id="matrix-n" title="请输入1-10之间的数字" 
+        class="ui-widget-content ui-corner-all" />
         <label for="matrix-m">m=</label>
-        <input type="text" name="matrix-m" id="matrix-m" 
-        class="text ui-widget-content ui-corner-all" />
+        <input type="text" name="matrix-m" id="matrix-m" title="请输入1-10之间的数字" 
+        class="ui-widget-content ui-corner-all" />
         </fieldset>
       </form>
     </div>    
-    <div id="tranform-dialog" title="行初等变换">      
-      <div class="ui-widget">
+    <div id="tranform-dialog" title="行初等变换">  
+      <form>    
+      <div class="ui-widget well">
         <div class="ui-corner-all" > 
           <p><span class="ui-icon ui-icon-info" style="float: left"></span>请选择希望进行的初等变换：</p>
         </div>
       </div>    
-      <form>
-      <fieldset>
-        <div id="transform-type">
+      <fieldset class=''>
+        <div id="transform-type" class=''>
           <input type="radio" id="transform-type-swap" name="transform-type" />
           <label for="transform-type-swap">交换两行</label>
           <input type="radio" id="transform-type-multiply-add" name="transform-type"/>
@@ -448,10 +455,15 @@
           <input type="radio" id="transform-type-multiply" name="transform-type"/>
           <label for="transform-type-multiply">当前行乘以k</label>
         </div>
-        <label for="transform-k">k=</label>
-        <input type="text" name="transform-k" id="transform-k" 
-        class="text ui-widget-content ui-corner-all" />
-        </fieldset>
+       </fieldset>
+       <fieldset class='form-stacked'>
+        <div>
+          <label for="transform-k">k=</label>
+          <input type="text" name="transform-k" id="transform-k"
+           title="请输入整数、小数或分数" 
+          class="ui-widget-content ui-corner-all" />
+        </div>
+       </fieldset>
       </form>
     </div>
   </div>
