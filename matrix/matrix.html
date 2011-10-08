@@ -154,36 +154,36 @@
           }
         });
                 
-        $( "#tranform-dialog" ).dialog({
+        $( "#transform-dialog" ).dialog({
           autoOpen: false,
           height: 350,
           width: 350,
           modal: true,
           open: function(event, ui)
           {
-            var scenario = $( "#tranform-dialog" ).dialog("option", "scenario");
+            var scenario = $( "#transform-dialog" ).dialog("option", "scenario");
             
-            $( "#tranform-dialog #transform-type").buttonset();
+            $( "#transform-dialog #transform-type").buttonset();
         
-            $( "#tranform-dialog #transform-type #transform-type-swap").click(function(e)
+            $( "#transform-dialog #transform-type #transform-type-swap").click(function(e)
             {
               $('label[for="transform-k"]').hide();
               $("#transform-k").hide();
-              $('#tranform-dialog #transform-type').attr('type_value', 'swap');
+              $('#transform-dialog #transform-type').attr('type_value', 'swap');
             });
             
-            $( "#tranform-dialog #transform-type #transform-type-multiply-add").click(function(e)
+            $( "#transform-dialog #transform-type #transform-type-multiply-add").click(function(e)
             {
               $('label[for="transform-k"]').show();
               $("#transform-k").show();
-              $('#tranform-dialog #transform-type').attr('type_value', 'multiply-add');
+              $('#transform-dialog #transform-type').attr('type_value', 'multiply-add');
             });
             
-            $( "#tranform-dialog #transform-type #transform-type-multiply").click(function(e)
+            $( "#transform-dialog #transform-type #transform-type-multiply").click(function(e)
             {
               $('label[for="transform-k"]').show();
               $("#transform-k").show();
-              $('#tranform-dialog #transform-type').attr('type_value', 'multiply');
+              $('#transform-dialog #transform-type').attr('type_value', 'multiply');
             });
             
             if(scenario == "DnD")
@@ -192,8 +192,8 @@
               $('label[for="transform-type-multiply-add"]').show();
               $('label[for="transform-type-multiply"]').hide();
               
-              $( "#tranform-dialog #transform-type #transform-type-multiply").hide();
-              $( "#tranform-dialog #transform-type #transform-type-multiply-add").click();
+              $( "#transform-dialog #transform-type #transform-type-multiply").hide();
+              $( "#transform-dialog #transform-type #transform-type-multiply-add").click();
             }
             else
             {
@@ -201,20 +201,20 @@
               $('label[for="transform-type-multiply-add"]').hide();
               $('label[for="transform-type-multiply"]').show();
                
-              $( "#tranform-dialog #transform-type #transform-type-multiply").click();
+              $( "#transform-dialog #transform-type #transform-type-multiply").click();
             }            
           },
           buttons: {
             "确定": function() {
               var bValid = true;
               
-              var from = $( "#tranform-dialog" ).dialog("option", "from");
+              var from = $( "#transform-dialog" ).dialog("option", "from");
               
-              var to = $( "#tranform-dialog" ).dialog("option", "to"); 
+              var to = $( "#transform-dialog" ).dialog("option", "to"); 
               
-              var type_value = $('#tranform-dialog #transform-type').attr('type_value');
+              var type_value = $('#transform-dialog #transform-type').attr('type_value');
               
-              var k = $('#tranform-dialog #transform-k').attr('value');
+              var k = $('#transform-dialog #transform-k').attr('value');
               
               if(/^-?[0-9/]+$/.test(k) || type_value == 'swap')
               {
@@ -228,7 +228,7 @@
               if ( bValid ) 
               {         
                  
-                $('#tranform-dialog #transform-k').removeClass('ui-state-error');
+                $('#transform-dialog #transform-k').removeClass('ui-state-error');
                 
                 if(type_value == 'multiply-add')
                 {               
@@ -262,21 +262,21 @@
                   $(to).effect("highlight", {speed: "slow"});
                 }
                 
-                $('#tranform-dialog #transform-k').attr('value', '');                                 
+                $('#transform-dialog #transform-k').attr('value', '');                                 
                 $( this ).dialog( "close" );
               }
               else
               {
-                $('#tranform-dialog #transform-k').addClass('ui-state-error');
-                $( $( "#tranform-dialog" ).dialog('widget') )
+                $('#transform-dialog #transform-k').addClass('ui-state-error');
+                $( $( "#transform-dialog" ).dialog('widget') )
                 //.effect('shake', {speed: 50});
                 .effect('bounce', {speed: 50});
               }
             },
             Cancel: function() 
             {
-              $('#tranform-dialog #transform-k').attr('value', '');
-              $('#tranform-dialog #transform-k').removeClass('ui-state-error');                                 
+              $('#transform-dialog #transform-k').attr('value', '');
+              $('#transform-dialog #transform-k').removeClass('ui-state-error');                                 
               $( this ).dialog( "close" );
             }
           },
@@ -310,20 +310,20 @@
           });
           
           $(this_row).dblclick(function(event){            
-              $( "#tranform-dialog" ).dialog( "option", "from", $(this_row));
-              $( "#tranform-dialog" ).dialog( "option", "to", $(this_row));
-              $( "#tranform-dialog" ).dialog("option", "scenario", "Single");
-              $( "#tranform-dialog" ).dialog( "open" );             
+              $( "#transform-dialog" ).dialog( "option", "from", $(this_row));
+              $( "#transform-dialog" ).dialog( "option", "to", $(this_row));
+              $( "#transform-dialog" ).dialog("option", "scenario", "Single");
+              $( "#transform-dialog" ).dialog( "open" );             
           });
           
           $(this_row).draggable({ opacity: 0.7, helper: "clone"});
           
           $(this_row).droppable({
             drop: function( event, ui ) {
-              $( "#tranform-dialog" ).dialog( "option", "from", ui.draggable);
-              $( "#tranform-dialog" ).dialog( "option", "to", $(this_row));
-              $( "#tranform-dialog" ).dialog("option", "scenario", "DnD");
-              $( "#tranform-dialog" ).dialog( "open" );            
+              $( "#transform-dialog" ).dialog( "option", "from", ui.draggable);
+              $( "#transform-dialog" ).dialog( "option", "to", $(this_row));
+              $( "#transform-dialog" ).dialog("option", "scenario", "DnD");
+              $( "#transform-dialog" ).dialog( "open" );            
             },
             hoverClass: "ui-state-hover"
           });
@@ -439,7 +439,7 @@
         </fieldset>
       </form>
     </div>    
-    <div id="tranform-dialog" title="行初等变换">  
+    <div id="transform-dialog" title="行初等变换">  
       <form>    
       <div class="ui-widget well">
         <div class="ui-corner-all" > 
