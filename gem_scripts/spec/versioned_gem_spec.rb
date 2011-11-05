@@ -157,20 +157,6 @@ describe VersionedGem do
         ['3.0.1', '3.0.2', '3.0.3']
     end
     
-    it "should get all versions of a gem from rubygems.org api" do 
-      vers = VersionedGem.get_all_versions('rails')
-      vers.should_not be_nil
-      vers.should be_an_instance_of(Array)
-      
-      vers.each do |ver|
-        ver.should be_an_instance_of(Hash)
-        
-        ["number", "built_at", "summary", "downloads_count", "platform", "authors", "description", "prerelease"].each do |key|
-          ver.should have_key(key)
-        end
-      end
-    end
-    
     it "should get all dependencies of all_versions of a gem from rubygem.org api" do
       deps = VersionedGem.get_all_dependencies('rails')
       
@@ -245,13 +231,20 @@ describe VersionedGem do
       @vg.constraint.should == ['~>', '2.1']
     end
     
-    it "should determine the best gem version" do
+    it "should really determine the best gem version" do
       VersionedGem.should_receive(:get_all_dependencies).with('minitest').
           and_return({"stub" => "stub!"});
       VersionedGem.should_receive(:dependencies_to_version_array).with({"stub" => "stub!"}).
           and_return(['2.0.0', '2.1.0', '2.7.0', '3.0.0']);
       @vg.best_version.should == '2.7.0'
     end
+    
+    #FIXME it's buggy spec
+    # it "should really determine the best gem version" do
+      # vg = VersionedGem.new('rack-mount', '~> 0.6.14')
+      # vg.best_version.should > '0.6.14'
+      # vg.best_version.should < '0.7.0'
+    # end
     
     it "should return dependencies"  do
       @vg.should_receive(:best_version).
@@ -284,17 +277,6 @@ describe VersionedGem do
       @vg2.download(:recursive => true) do |url, file_name|
         if  count == 0
           #clean up
-          file = File.expand_path("../activesupport-3.1.1.gem", __FILE__)
-          FileUtils.remove_file file if File.exists?(file)
-          
-          url.should == 'http://rubygems.org/downloads/activesupport-3.1.1.gem'
-          file_name.should == 'activesupport-3.1.1.gem'
-          File.exists?(file).should == false 
-          `curl --location #{url} -o #{file}`
-          File.exists?(file).should == true 
-          count+=1
-        else
-          #clean up
           file = File.expand_path("../multi_json-1.0.3.gem", __FILE__)
           FileUtils.remove_file file if File.exists?(file)
           
@@ -304,10 +286,23 @@ describe VersionedGem do
           `curl --location #{url} -o #{file}`
           File.exists?(file).should == true
           count+=1 
+        else
+          #clean up
+          file = File.expand_path("../activesupport-3.1.1.gem", __FILE__)
+          FileUtils.remove_file file if File.exists?(file)
+          
+          url.should == 'http://rubygems.org/downloads/activesupport-3.1.1.gem'
+          file_name.should == 'activesupport-3.1.1.gem'
+          File.exists?(file).should == false 
+          `curl --location #{url} -o #{file}`
+          File.exists?(file).should == true 
+          count+=1
         end
       end
       
-      count.should == 2     
+      count.should == 2 
+      
+      #No clean up for the time being, maybe later    
     end
   end  
 end

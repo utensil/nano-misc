@@ -1,4 +1,4 @@
-require File.expand_path('../gem_installer', __FILE__)
+#require File.expand_path('../NothingForTheTimeBeing', __FILE__)
 
 RSpec.configure do |config|
   # == Mock Framework

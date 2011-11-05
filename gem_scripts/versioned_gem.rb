@@ -1,6 +1,3 @@
-require 'rubygems'
-require 'json'
-require 'multi_json'
 require 'open-uri'
 
 class VersionedGem
@@ -36,29 +33,6 @@ class VersionedGem
   end
   
   #http://guides.rubygems.org/rubygems-org-api/
-  
-  # GET - /api/v1/versions/[GEM NAME].(json|xml|yaml)
-  # Returns an array of gem version details like the below:
-  # 
-  # $ curl https://rubygems.org/api/v1/versions/coulda.json
-  # 
-  # [
-     # {
-        # "number" : "0.6.3",
-        # "built_at" : "2010-12-23T05:00:00Z",
-        # "summary" : "Test::Unit-based acceptance testing DSL",
-        # "downloads_count" : 175,
-        # "platform" : "ruby",
-        # "authors" : "Evan David Light",
-        # "description" : "Behaviour Driven Development derived from Cucumber but
-                         # as an internal DSL with methods for reuse",
-        # "prerelease" : false,
-     # }
-  # ]
-  def self.get_all_versions(gem_name)
-    versions = MultiJson.decode(open("http://rubygems.org/api/v1/versions/#{gem_name}.json"))
-  end
-
   # GET - /api/v1/dependencies?gems=[COMMA DELIMITED GEM NAMES]
   # Returns a marshalled array of hashes for all versions of given gems. Each hash contains a gem version with its dependencies making this useful for resolving dependencies.
   # 
@@ -149,6 +123,7 @@ class VersionedGem
     when '>='
       versions.select do |v|
         v >= ver
+        
       end
     when '>'
       versions.select do |v|
@@ -198,31 +173,72 @@ class VersionedGem
      constraint)
   end
   
-  def dependencies
-    self.class.get_dependencies(name, best_version)
+  def dependencies    
+    @dependencies ||= self.class.get_dependencies(name, best_version)
   end
   
-  #TODO
+  #TODO return sucess or fail
   def download(options = {}, &block)
-    options = { :recursive => false }.merge(options)
+    options = { :recursive => false, :install => false, :clean => false, :cache => {} }.merge(options)
+    
+    is_ok = false
+    options[:cache][:depth] ||= 1
+    
+    if options[:clean]
+      Dir.glob('*.gem').each do|f|
+        puts
+        #File.delete f
+      end
+      #ensure it won't be exec recursively
+      options[:clean] = false
+    end
+    
+    if options[:recursive]
+      
+      puts "#{' ' * options[:cache][:depth]}Resolving dependencies for #{name}-#{best_version}..."
+      
+      options[:cache][:depth] += 1
+            
+      dependencies.each do |dep|
+        raise "dep.size != 2" if dep.size != 2
+        
+        puts "#{' ' * options[:cache][:depth]}Dependency #{dep[0]}, #{dep[1]}:"
+        # try to use the vg in the cache first
+        vg = options[:cache][[dep[0], dep[1]]]
+        # if cache isn't hit, create a new vg         
+        vg = VersionedGem.new(dep[0], dep[1]) if vg.nil?           
+        vg.download(options, &block) 
+        # write into cache
+        options[:cache][[dep[0], dep[1]]] = vg
+      end
+      
+      options[:cache][:depth] -= 1
+    end
+    
     unless block_given?
       #avoid dup
       #TODO make it not relate to __FILE__
       file = "#{name}-#{best_version}.gem"
       unless File.exists?(file)
-        `curl --location http://rubygems.org/downloads/#{name}-#{best_version}.gem -o #{file}`
+        puts "#{' ' * options[:cache][:depth]}Downloading #{file}..."
+        puts `curl --location http://rubygems.org/downloads/#{name}-#{best_version}.gem -o #{file}`
+        is_ok = true if $?
+      else
+        puts "#{' ' * options[:cache][:depth]}Using #{file}..."
+        is_ok = true
+      end
+      
+      if options[:install]      
+        puts "#{' ' * options[:cache][:depth]}Installing #{file}..."
+        puts `gem install -l #{file}`
+        if $?
+          is_ok = true
+        else
+          puts "#{' ' * options[:cache][:depth]}Install #{file} failed."
+        end
       end
     else
       yield "http://rubygems.org/downloads/#{name}-#{best_version}.gem", "#{name}-#{best_version}.gem"
-    end
-
-    
-    if options[:recursive]
-      dependencies.each do |dep|
-        raise "dep.size != 2" if dep.size != 2
-        vg = VersionedGem.new(dep[0], dep[1])
-        vg.download(options, &block) 
-      end
     end
   end
 end
