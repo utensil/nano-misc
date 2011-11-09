@@ -1,4 +1,5 @@
 require 'open-uri'
+require File.expand_path('../sem_ver', __FILE__)
 
 class VersionedGem
   
@@ -21,11 +22,14 @@ class VersionedGem
     # <= Less than or equal to
     # ~> Approximately greater than 
        # (see "Pessimistic Version Constraint" below)  
-    return ['>', '0.0.0'] if gem_constraint.nil? || gem_constraint == ""       
+    return ['>', '0.0.0'] if gem_constraint.nil? || gem_constraint == "" || 
+                              gem_constraint.match(/^\s*>[=]?\s*0\s*$/)     
        
-    matched = gem_constraint.match /^\s*([!=><~]+)?\s*(\d+\.\d+(\.\d+\.?([A-Za-z][0-9A-Za-z\-.]*)?)?)\s*$/
+    matched = gem_constraint.match /^\s*([!=><~]+)?\s*((\d+)\.(\d+)(\.(\d+))?(\.?[A-Za-z0-9][0-9A-Za-z\-.]*)?)\s*(,.*)?$/
     
     raise "Invalid gem constraint[#{gem_constraint}]" if matched.nil?
+    #FIXME 
+    #puts "WARN: Ignoring more than one gem contraint except the first one for [#{matched.inspect}] in [#{gem_constraint}]" if matched[7] != ''
     
     rel = matched[1] || '='
     
@@ -66,7 +70,7 @@ class VersionedGem
         break
       end
     end
-    raise "#{gem_name} doesn't have a version of #{version}!" if vg_dep.nil?
+    raise "#{gem_name} doesn't have a version of #{version} in #{deps}!" if vg_dep.nil?
     
     vg_dep
   end
@@ -100,53 +104,63 @@ class VersionedGem
     end  
   end
   
-  def self.select_version(versions, constraint)
+  def self.select_version(versions, constraint, options = {})
     raise "Invalid constraint [#{constraint.to_s}]" unless constraint.instance_of?(Array) && constraint.size == 2
     raise "invalid versions [#{versions.to_s}]" unless versions.instance_of?(Array)
     
-    #ensure its sorted(no need, optimize later)
-    #versions.sort!
+    options = { :pre => false }.merge(options)
+    include_pre = options[:pre]
     
-    qv, ver = constraint[0], constraint[1]
+    qv, rv = constraint[0], constraint[1]    
+    ver = SemVer.new rv
     
     #'=', '!=', '>', '<', '>=', '<=', '~>'
+    # (include_pre || !sv.pre?) # => either include pre or exclude pre
     
     best_version = case qv
     when '='
       versions.select do |v|
-        v == ver
+        sv = SemVer.new(v)
+        sv == ver && (include_pre || !sv.pre?) #either include pre or exclude pre
       end
     when '!='
       versions.select do |v|
-        v != ver
+        sv = SemVer.new(v)
+        sv != ver && (include_pre || !sv.pre?) 
       end
     when '>='
       versions.select do |v|
-        v >= ver
-        
+        sv = SemVer.new(v)
+        sv >= ver && (include_pre || !sv.pre?) 
       end
     when '>'
       versions.select do |v|
-        v > ver
+        sv = SemVer.new(v)
+        sv > ver && (include_pre || !sv.pre?) 
       end
     when '<='
       versions.select do |v|
-        v <= ver
+        sv = SemVer.new(v) 
+        sv <= ver && (include_pre || !sv.pre?) 
       end 
     when '<'
       versions.select do |v|
-        v < ver
+        sv = SemVer.new(v) 
+        sv < ver && (include_pre || !sv.pre?)
       end  
     when '~>'
-      uv = self.upper_bound(ver)
-      versions.select do |v|        
-        v >= ver && v < uv
+      uv = SemVer.new(self.upper_bound(rv))
+      versions.select do |v| 
+        sv = SemVer.new(v)       
+        sv >= ver && sv < uv && (include_pre || !sv.pre?)
       end
     else
       raise "Invalid constraint symbol [#{qv}]"
     end
     
-    best_version.max     
+    best_version = best_version.max_by { |v| SemVer.new(v) }
+    raise "No best version found for #{qv}#{rv} in #{versions.inspect}" if best_version.nil?
+    best_version  
   end
   
   def initialize(name, constraint)
@@ -166,11 +180,20 @@ class VersionedGem
     @constraint
   end
   
-  def best_version
-    @best_version ||= self.class.select_version(
-      self.class.dependencies_to_version_array(
-        self.class.get_all_dependencies(name)),
-     constraint)
+  def best_version(options = {})
+    options = { :pre => false }.merge(options)
+    
+    if options[:pre]    
+      @best_version_with_pre ||= self.class.select_version(
+        self.class.dependencies_to_version_array(
+          self.class.get_all_dependencies(name)),
+       constraint, options)
+     else
+      @best_version_without_pre ||= self.class.select_version(
+        self.class.dependencies_to_version_array(
+          self.class.get_all_dependencies(name)),
+       constraint, options) 
+     end
   end
   
   def dependencies    
@@ -186,7 +209,8 @@ class VersionedGem
     
     if options[:clean]
       Dir.glob('*.gem').each do|f|
-        puts
+        #TODO
+        puts f
         #File.delete f
       end
       #ensure it won't be exec recursively
@@ -216,9 +240,9 @@ class VersionedGem
     end
     
     unless block_given?
-      #avoid dup
-      #TODO make it not relate to __FILE__
+      
       file = "#{name}-#{best_version}.gem"
+      #avoid dup
       unless File.exists?(file)
         puts "#{' ' * options[:cache][:depth]}Downloading #{file}..."
         puts `curl --location http://rubygems.org/downloads/#{name}-#{best_version}.gem -o #{file}`

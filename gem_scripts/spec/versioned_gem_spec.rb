@@ -16,6 +16,11 @@ describe VersionedGem do
       VersionedGem.parse_constraint('').should == ['>', '0.0.0']
     end
     
+    it 'should parse contraint like > 0 or >= 0' do
+      VersionedGem.parse_constraint('> 0').should == ['>', '0.0.0']
+      VersionedGem.parse_constraint('>= 0').should == ['>', '0.0.0']
+    end
+    
     it 'should parse `2-digit version`' do
       VersionedGem.parse_constraint('2.1').should == ['=', '2.1']
     end
@@ -41,7 +46,7 @@ describe VersionedGem do
       VersionedGem.parse_constraint('2.1.1RC2').should == ['=', '2.1.1RC2']
     end
     
-    it 'should tollerent not quite sematic versions' do
+    it 'should tollerent not quite semantic versions' do
       VersionedGem.parse_constraint('2.1.1.beta2').should == ['=', '2.1.1.beta2']
       VersionedGem.parse_constraint('2.1.1.rc.2').should == ['=', '2.1.1.rc.2']
       VersionedGem.parse_constraint('2.1.1.rc-2').should == ['=', '2.1.1.rc-2']
@@ -90,6 +95,38 @@ describe VersionedGem do
       VersionedGem.select_version(
             ['2.1.0', '2.1.1', '2.2.0', '3.0.0'], ['<=', '2.1.1']).
             should == '2.1.1'
+    end
+    
+    it "should select the best version when it's like xx.x.x, x.xx.x or x.x.xx" do
+      #'=', '!=', '>', '<', '>=', '<=', '~>'
+      VersionedGem.select_version(
+            ['2.2.3', '2.2.10'], ['>', '2.2.2']).
+            should == '2.2.10'
+      VersionedGem.select_version(
+            ['2.3.0', '2.10.0'], ['>', '2.2.0']).
+            should == '2.10.0'
+      VersionedGem.select_version(
+            ['3.0.0', '10.0.0'], ['>', '2.0.0']).
+            should == '10.0.0'
+    end
+    
+    it "should select the best version when it's like x.x.xbeta1" do
+      #'=', '!=', '>', '<', '>=', '<=', '~>'
+      VersionedGem.select_version(
+            ['2.2.3', '2.2.3beta'], ['>', '2.2.2']).
+            should == '2.2.3'
+    end
+    
+    it "should accept :pre => true/false as option to select the best version with default to false" do
+      VersionedGem.select_version(
+            ['2.2.3', '2.2.4beta'], ['>', '2.2.2']).
+            should == '2.2.3'
+      VersionedGem.select_version(
+            ['2.2.3', '2.2.4beta'], ['>', '2.2.2'], :pre => false).
+            should == '2.2.3'
+      VersionedGem.select_version(
+            ['2.2.3', '2.2.4beta'], ['>', '2.2.2'], :pre => true).
+            should == '2.2.4beta'            
     end
     
     it "should select the best version based on the pessimistic version constraint" do
@@ -153,8 +190,10 @@ describe VersionedGem do
                   :number=>ver}
       end
       
+      VersionedGem.dependencies_to_version_array(deps).should_not ==
+        [SemVer.new('3.0.1'), SemVer.new('3.0.2'), SemVer.new('3.0.3')]
       VersionedGem.dependencies_to_version_array(deps).should ==
-        ['3.0.1', '3.0.2', '3.0.3']
+        ['3.0.1', '3.0.2', '3.0.3']  
     end
     
     it "should get all dependencies of all_versions of a gem from rubygem.org api" do
@@ -235,16 +274,24 @@ describe VersionedGem do
       VersionedGem.should_receive(:get_all_dependencies).with('minitest').
           and_return({"stub" => "stub!"});
       VersionedGem.should_receive(:dependencies_to_version_array).with({"stub" => "stub!"}).
-          and_return(['2.0.0', '2.1.0', '2.7.0', '3.0.0']);
+          and_return(['2.0.0', '2.1.0', '2.7.0', '2.8.0rc1', '3.0.0']);
       @vg.best_version.should == '2.7.0'
     end
     
-    #FIXME it's buggy spec
-    # it "should really determine the best gem version" do
-      # vg = VersionedGem.new('rack-mount', '~> 0.6.14')
-      # vg.best_version.should > '0.6.14'
-      # vg.best_version.should < '0.7.0'
-    # end
+    it "should really determine the best gem version with :pre => true" do
+      VersionedGem.should_receive(:get_all_dependencies).with('minitest').
+          and_return({"stub" => "stub!"});
+      VersionedGem.should_receive(:dependencies_to_version_array).with({"stub" => "stub!"}).
+          and_return(['2.0.0', '2.1.0', '2.7.0', '2.8.0rc1', '3.0.0']);
+      @vg.best_version(:pre => true).should == '2.8.0rc1'
+    end
+
+    it "should really determine the best gem version" do
+      vg = VersionedGem.new('rack-mount', '~> 0.6.14')
+      bv = SemVer.new(vg.best_version)
+      bv.should >= SemVer.new('0.6.14')
+      bv.should < SemVer.new('0.7.0')
+    end
     
     it "should return dependencies"  do
       @vg.should_receive(:best_version).
