@@ -1,6 +1,9 @@
 README
 ========
 
+Included Projects
+-------------------
+
 ### BookmarkOrganizer
   A simple AIR app to organize Firefox bookmarks. Styles thank to a jQuery API browser which I can't find the original app and author now.
 
@@ -13,7 +16,8 @@ README
 ### gem_scripts
   A simple script to speed `bundle install` up by pre-installing gems using rubygems.org api. Rspeced.
   
-## Note on Patches/Pull Requests
+Note on Patches/Pull Requests
+-------------------------------
  
 * Fork the project.
 * Make your feature addition or bug fix.
@@ -22,8 +26,6 @@ README
 * Commit, do not mess with rakefile, version, or history.
   (if you want to have your own version, that is fine but bump version in a commit by itself I can ignore when I pull)
 * Send me a pull request. Bonus points for topic branches.
-
-## Copyright
 
 Licence
 --------
