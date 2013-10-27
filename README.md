@@ -32,3 +32,6 @@ Licence
 
 MIT Licence, see LICENCE.
 Copyright (c) 2011-2012 Utensil Song (https://github.com/utensil)
+
+[![Bitdeli Badge](https://d2weczhvl823v0.cloudfront.net/utensil/nano-misc/trend.png)](https://bitdeli.com/free "Bitdeli Badge")
+
